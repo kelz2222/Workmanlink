@@ -82,12 +82,18 @@ export default function ArtisanRegister() {
     try {
       // 1. Create auth account
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-      });
-      if (authError) throw authError;
+  email: form.email,
+  password: form.password,
+});
+if (authError) throw authError;
 
-      const userId = authData.user.id;
+const userId = authData.user.id;
+
+const { error: signInError } = await supabase.auth.signInWithPassword({
+  email: form.email,
+  password: form.password,
+});
+if (signInError) throw signInError;
 
       // 2. Upload profile photo (public bucket)
       let profile_photo_url = null;
