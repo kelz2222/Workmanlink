@@ -5,7 +5,7 @@ import { ShieldCheck, Camera, Upload, ChevronRight, ChevronLeft } from 'lucide-r
 
 export default function ArtisanRegister() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: account, 2: profile, 3: location, 4: portfolio+NIN
+  const [step, setStep] = useState(1);
   const [cities, setCities] = useState([]);
   const [areas, setAreas] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -33,7 +33,6 @@ export default function ArtisanRegister() {
 
   useEffect(() => {
     loadOptions();
-    // If they're already logged in (came back after step 1 earlier), skip ahead
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         setAccountCreated(true);
@@ -63,7 +62,6 @@ export default function ArtisanRegister() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  // STEP 1: create the account FIRST, confirm session is active, THEN move on
   async function handleCreateAccount() {
     if (!form.email || !form.password || form.password.length < 6) {
       return alert('Please enter a valid email and a password with at least 6 characters');
@@ -77,14 +75,12 @@ export default function ArtisanRegister() {
       });
       if (signUpError) throw signUpError;
 
-      // Force an explicit sign-in to guarantee an active session
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
       });
       if (signInError) throw signInError;
 
-      // Double-check the session is really there before proceeding
       const { data: sessionCheck } = await supabase.auth.getSession();
       if (!sessionCheck.session) throw new Error('Could not confirm login session. Please try again.');
 
@@ -111,25 +107,25 @@ export default function ArtisanRegister() {
     setStep((s) => s - 1);
   }
 
-  // FINAL STEP: no signUp here anymore — the user is already logged in from step 1
   async function handleSubmit() {
     if (!form.ninNumber || !form.ninDocFile) {
       return alert('NIN number and NIN document are required for verification');
     }
-async function handleSubmit() {
-  if (!form.ninNumber || !form.ninDocFile) {
-    return alert('NIN number and NIN document are required for verification');
-  }
 
-  // ===== DEBUG BLOCK — remove after we find the issue =====
-  const { data: debugSession } = await supabase.auth.getSession();
-  const { data: debugUser } = await supabase.auth.getUser();
-  alert(
-    'Session exists: ' + (debugSession.session ? 'YES' : 'NO') +
-    '\nUser ID from session: ' + debugSession.session?.user?.id +
-    '\nUser ID from getUser(): ' + debugUser.user?.id +
-    '\nEmail confirmed: ' + debugUser.user?.email_confirmed_at
-  );
+    // ===== DEBUG BLOCK — remove after we find the issue =====
+    const { data: debugSession } = await supabase.auth.getSession();
+    const { data: debugUser } = await supabase.auth.getUser();
+    alert(
+      'Session exists: ' + (debugSession.session ? 'YES' : 'NO') +
+      '\nUser ID from session: ' + debugSession.session?.user?.id +
+      '\nUser ID from getUser(): ' + debugUser.user?.id +
+      '\nEmail confirmed: ' + debugUser.user?.email_confirmed_at +
+      '\nCityId: ' + form.cityId +
+      '\nAreaId: ' + form.areaId +
+      '\nCategoryId: ' + form.categoryId
+    );
+    // ===== END DEBUG BLOCK =====
+
     setSubmitting(true);
 
     try {
@@ -137,7 +133,6 @@ async function handleSubmit() {
       if (!sessionData.session) throw new Error('Your session expired. Please log in again.');
       const userId = sessionData.session.user.id;
 
-      // 1. Upload profile photo (public bucket)
       let profile_photo_url = null;
       if (form.profilePhotoFile) {
         const fileName = `${userId}-${Date.now()}-${form.profilePhotoFile.name}`;
@@ -148,13 +143,11 @@ async function handleSubmit() {
         }
       }
 
-      // 2. Upload NIN document (PRIVATE bucket) — store path only
       const ninFileName = `${userId}-${Date.now()}-nin-${form.ninDocFile.name}`;
       const { error: ninUpErr } = await supabase.storage.from('nin-documents').upload(ninFileName, form.ninDocFile);
       if (ninUpErr) throw ninUpErr;
       const nin_document_url = ninFileName;
 
-      // 3. Insert artisan row
       const { data: artisanRow, error: artisanError } = await supabase.from('artisans').insert({
         auth_user_id: userId,
         full_name: form.fullName,
@@ -173,7 +166,6 @@ async function handleSubmit() {
 
       if (artisanError) throw artisanError;
 
-      // 4. Upload portfolio images (public bucket)
       for (const file of form.portfolioFiles) {
         const fileName = `${artisanRow.id}-${Date.now()}-${file.name}`;
         const { error: upErr } = await supabase.storage.from('portfolio-images').upload(fileName, file);
@@ -218,7 +210,6 @@ async function handleSubmit() {
         ))}
       </div>
 
-      {/* STEP 1: Account — creates + logs in immediately */}
       {step === 1 && (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-gray-800">Create your account</p>
@@ -231,7 +222,6 @@ async function handleSubmit() {
         </div>
       )}
 
-      {/* STEP 2: Profile info */}
       {step === 2 && (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-gray-800">Your profile</p>
@@ -262,7 +252,6 @@ async function handleSubmit() {
         </div>
       )}
 
-      {/* STEP 3: Location */}
       {step === 3 && (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-gray-800">Where do you work?</p>
@@ -298,7 +287,6 @@ async function handleSubmit() {
         </div>
       )}
 
-      {/* STEP 4: Portfolio + NIN */}
       {step === 4 && (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-gray-800">Portfolio & Verification</p>
@@ -338,7 +326,6 @@ async function handleSubmit() {
         </div>
       )}
 
-      {/* Navigation */}
       <div className="flex gap-2 mt-6">
         {step > 1 && (
           <button onClick={prevStep} className="flex-1 flex items-center justify-center gap-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-medium">
