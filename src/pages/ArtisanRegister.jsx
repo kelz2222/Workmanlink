@@ -29,6 +29,9 @@ export default function ArtisanRegister() {
     portfolioFiles: [],
     ninNumber: '',
     ninDocFile: null,
+    bankName: '',
+    bankAccountNumber: '',
+    bankAccountName: '',
   });
 
   useEffect(() => {
@@ -147,6 +150,9 @@ export default function ArtisanRegister() {
         profile_photo_url,
         nin_number: form.ninNumber,
         nin_document_url,
+        bank_name: form.bankName,
+        bank_account_number: form.bankAccountNumber,
+        bank_account_name: form.bankAccountName,
         status: 'pending',
       }).select().single();
 
@@ -178,7 +184,7 @@ export default function ArtisanRegister() {
         <ShieldCheck size={56} className="text-primary-500 mb-4" />
         <h1 className="font-bold text-xl text-gray-900 mb-2">Registration Submitted!</h1>
         <p className="text-sm text-gray-500 mb-6">
-          Your profile is pending admin review. You'll be able to log in and appear on WorkmanLink once approved and verified.
+          Your profile is pending admin review. You'll be able to appear on WorkmanLink once approved and verified.
         </p>
         <button onClick={() => navigate('/')} className="btn-primary w-full max-w-xs">Back to Home</button>
       </div>
@@ -308,6 +314,31 @@ export default function ArtisanRegister() {
               </span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => update('ninDocFile', e.target.files[0])} />
             </label>
+          </div>
+
+          <div className="bg-gray-50 rounded-xl p-4 mt-2">
+            <p className="text-sm font-semibold text-gray-800 mb-1">Bank Details (for job payouts)</p>
+            <p className="text-xs text-gray-500 mb-3">
+              This is where you'll receive payment after each completed job. You can update this later.
+            </p>
+            <input
+              value={form.bankName}
+              onChange={(e) => update('bankName', e.target.value)}
+              placeholder="Bank name (e.g. GTBank, Access Bank)"
+              className="w-full p-3 rounded-xl border border-gray-200 mb-3"
+            />
+            <input
+              value={form.bankAccountNumber}
+              onChange={(e) => update('bankAccountNumber', e.target.value)}
+              placeholder="Account number"
+              className="w-full p-3 rounded-xl border border-gray-200 mb-3"
+            />
+            <input
+              value={form.bankAccountName}
+              onChange={(e) => update('bankAccountName', e.target.value)}
+              placeholder="Account name"
+              className="w-full p-3 rounded-xl border border-gray-200"
+            />
           </div>
         </div>
       )}
