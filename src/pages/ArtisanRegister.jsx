@@ -180,10 +180,16 @@ export default function ArtisanRegister() {
 
       setDone(true);
     } catch (err) {
-      alert('Registration failed: ' + err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  alert(
+    'FULL ERROR DEBUG:\n' +
+    'Message: ' + err.message + '\n' +
+    'Code: ' + err.code + '\n' +
+    'Details: ' + err.details + '\n' +
+    'Hint: ' + err.hint
+  );
+} finally {
+  setSubmitting(false);
+}
   }
 
   if (done) {
