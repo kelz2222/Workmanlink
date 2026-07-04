@@ -116,7 +116,20 @@ export default function ArtisanRegister() {
     if (!form.ninNumber || !form.ninDocFile) {
       return alert('NIN number and NIN document are required for verification');
     }
+async function handleSubmit() {
+  if (!form.ninNumber || !form.ninDocFile) {
+    return alert('NIN number and NIN document are required for verification');
+  }
 
+  // ===== DEBUG BLOCK — remove after we find the issue =====
+  const { data: debugSession } = await supabase.auth.getSession();
+  const { data: debugUser } = await supabase.auth.getUser();
+  alert(
+    'Session exists: ' + (debugSession.session ? 'YES' : 'NO') +
+    '\nUser ID from session: ' + debugSession.session?.user?.id +
+    '\nUser ID from getUser(): ' + debugUser.user?.id +
+    '\nEmail confirmed: ' + debugUser.user?.email_confirmed_at
+  );
     setSubmitting(true);
 
     try {
