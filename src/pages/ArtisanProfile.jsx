@@ -70,9 +70,6 @@ export default function ArtisanProfile() {
   }
 
   async function handleSimulatedPayment() {
-    // PLACEHOLDER: simulates a successful payment.
-    // When Paystack is connected, replace this with a real payment popup,
-    // and only update payment_status after Paystack confirms success via webhook.
     await supabase.from('jobs').update({ payment_status: 'paid' }).eq('id', activeJob.id);
     setActiveJob({ ...activeJob, payment_status: 'paid' });
     alert('Payment successful (test mode). Your booking is confirmed.');
@@ -101,7 +98,11 @@ export default function ArtisanProfile() {
   if (loading) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
   if (!artisan) return <div className="min-h-screen flex items-center justify-center text-gray-400">Artisan not found</div>;
 
-  const hasReviewedThisJob = activeJob?.status === 'completed' &&
+  const knownStates = ['hired-unpaid', 'hired-paid', 'completed-released'];
+  const currentJobState = activeJob ? `${activeJob.status}-${activeJob.payment_status || 'unpaid'}` : null;
+  const effectiveJob = (activeJob && knownStates.includes(currentJobState)) ? activeJob : null;
+
+  const hasReviewedThisJob = effectiveJob?.status === 'completed' &&
     reviews.some(r => r.customer_phone === localStorage.getItem('wl_customer_phone'));
 
   return (
@@ -154,25 +155,25 @@ export default function ArtisanProfile() {
       </div>
 
       <div className="px-4 mt-4">
-        {!activeJob && (
+        {!effectiveJob && (
           <button onClick={() => setShowHireModal(true)} className="btn-primary w-full">
             Hire {artisan.full_name.split(' ')[0]}
           </button>
         )}
 
-        {activeJob?.status === 'hired' && activeJob?.payment_status === 'unpaid' && (
+        {effectiveJob?.status === 'hired' && effectiveJob?.payment_status === 'unpaid' && (
           <div className="card p-4 bg-yellow-50 border border-yellow-200">
             <p className="text-sm text-yellow-800 font-medium mb-3">Confirm your booking</p>
             <p className="text-xs text-yellow-700 mb-3">
-              Pay to secure this booking. Your payment is held safely and only released to {artisan.full_name.split(' ')[0]} once you confirm the job is done.
+              Pay to secure this booking. Your money is held safely and only sent to {artisan.full_name.split(' ')[0]} once you confirm the job is done — it is not paid out yet.
             </p>
             <button onClick={handleSimulatedPayment} className="w-full bg-yellow-600 text-white py-3 rounded-xl font-semibold">
-              Pay & Confirm Booking
+              Pay & Secure Booking
             </button>
           </div>
         )}
 
-        {activeJob?.status === 'hired' && activeJob?.payment_status === 'paid' && (
+        {effectiveJob?.status === 'hired' && effectiveJob?.payment_status === 'paid' && (
           <div className="card p-4 bg-blue-50 border-2 border-blue-300">
             <p className="text-sm font-semibold text-blue-900 mb-2">Payment secured</p>
             <p className="text-xs text-blue-700 mb-3">
@@ -184,11 +185,11 @@ export default function ArtisanProfile() {
           </div>
         )}
 
-        {activeJob?.status === 'completed' && !hasReviewedThisJob && (
-          <ReviewForm artisanId={id} jobId={activeJob.id} onDone={() => setActiveJob(null)} />
+        {effectiveJob?.status === 'completed' && !hasReviewedThisJob && (
+          <ReviewForm artisanId={id} jobId={effectiveJob.id} onDone={() => setActiveJob(null)} />
         )}
 
-        {activeJob?.status === 'completed' && hasReviewedThisJob && (
+        {effectiveJob?.status === 'completed' && hasReviewedThisJob && (
           <div className="card p-4 bg-primary-50 border border-primary-200 text-center">
             <CheckCircle2 className="text-primary-500 mx-auto mb-1" size={24} />
             <p className="text-sm text-primary-700 font-medium">Thanks for your review!</p>
@@ -258,31 +259,41 @@ function HireModal({ artisanName, onClose, onSubmit }) {
   const [phone, setPhone] = useState(localStorage.getItem('wl_customer_phone') || '');
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
-      <div className="bg-white w-full rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-bold text-lg mb-1">Hire {artisanName.split(' ')[0]}</h3>
-        <p className="text-sm text-gray-500 mb-4">Enter your details so we can track this job for payment, confirmation and reviews later.</p>
+    <div
+      className="fixed inset-0 bg-black/40 z-[60] flex items-end"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white w-full rounded-t-3xl max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="overflow-y-auto p-5 flex-1">
+          <h3 className="font-bold text-lg mb-1">Hire {artisanName.split(' ')[0]}</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Enter your details so we can track this job for payment, confirmation and reviews later.
+          </p>
 
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Your name"
-          className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none mb-3"
-        />
-        <input
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          type="tel"
-          placeholder="Your phone number"
-          className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none mb-4"
-        />
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none mb-3"
+          />
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            type="tel"
+            placeholder="Your phone number"
+            className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none mb-4"
+          />
 
-        <button
-          onClick={() => name && phone && onSubmit(name, phone)}
-          className="btn-primary w-full"
-        >
-          Continue
-        </button>
+          <button
+            onClick={() => name && phone && onSubmit(name, phone)}
+            className="btn-primary w-full"
+          >
+            Continue
+          </button>
+        </div>
       </div>
     </div>
   );
