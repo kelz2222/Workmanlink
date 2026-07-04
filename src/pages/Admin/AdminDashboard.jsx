@@ -1,0 +1,108 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { Users, Clock, Star, Flag, LogOut } from 'lucide-react';
+
+export default function AdminDashboard() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
+
+  useEffect(() => {
+    checkAdminAndLoad();
+  }, []);
+
+  async function checkAdminAndLoad() {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) return navigate('/admin');
+
+    const { data: adminRow } = await supabase.from('admin_users').select('*').eq('auth_user_id', sessionData.session.user.id).single();
+    if (!adminRow) return navigate('/admin');
+
+    setAuthorized(true);
+
+    const [total, pending, approved, verified, reports] = await Promise.all([
+      supabase.from('artisans').select('id', { count: 'exact', head: true }),
+      supabase.from('artisans').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('artisans').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+      supabase.from('artisans').select('id', { count: 'exact', head: true }).eq('is_verified', true),
+      supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+    ]);
+
+    setStats({
+      total: total.count || 0,
+      pending: pending.count || 0,
+      approved: approved.count || 0,
+      verified: verified.count || 0,
+      openReports: reports.count || 0,
+    });
+    setLoading(false);
+  }
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    navigate('/admin');
+  }
+
+  if (loading || !authorized) return <div className="min-h-screen flex items-center justify-center text-gray-400">Loading...</div>;
+
+  const links = [
+    { label: 'Pending Approvals', icon: Clock, path: '/admin/artisans?filter=pending', count: stats.pending, color: 'text-yellow-600 bg-yellow-50' },
+    { label: 'All Artisans', icon: Users, path: '/admin/artisans', count: stats.total, color: 'text-primary-600 bg-primary-50' },
+    { label: 'Reports', icon: Flag, path: '/admin/reports', count: stats.openReports, color: 'text-red-600 bg-red-50' },
+  ];
+
+  return (
+    <div className="min-h-screen px-4 pt-6 pb-10">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-bold text-xl text-gray-900">Admin Dashboard</h1>
+          <p className="text-sm text-gray-500">WorkmanLink Overview</p>
+        </div>
+        <button onClick={handleLogout} className="text-gray-400"><LogOut size={20} /></button>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="card p-4">
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-xs text-gray-500">Total Registrations</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-2xl font-bold text-primary-600">{stats.approved}</p>
+          <p className="text-xs text-gray-500">Approved & Live</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+          <p className="text-xs text-gray-500">Pending Review</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-2xl font-bold text-blue-600">{stats.verified}</p>
+          <p className="text-xs text-gray-500">Verified Badge</p>
+        </div>
+      </div>
+
+      {/* Nav links */}
+      <div className="flex flex-col gap-2">
+        {links.map((link) => (
+          <button
+            key={link.path}
+            onClick={() => navigate(link.path)}
+            className="card p-4 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl ${link.color}`}>
+                <link.icon size={20} />
+              </div>
+              <span className="font-medium text-gray-800">{link.label}</span>
+            </div>
+            {link.count > 0 && (
+              <span className="bg-gray-900 text-white text-xs font-semibold px-2 py-1 rounded-full">{link.count}</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
