@@ -69,13 +69,13 @@ export default function ArtisanRegister() {
 
     setCreatingAccount(true);
     try {
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
       });
       if (signUpError) throw signUpError;
 
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email: form.email,
         password: form.password,
       });
@@ -112,29 +112,12 @@ export default function ArtisanRegister() {
       return alert('NIN number and NIN document are required for verification');
     }
 
-    // ===== DEBUG BLOCK — remove after we find the issue =====
-    const { data: debugSession } = await supabase.auth.getSession();
-    const { data: debugUser } = await supabase.auth.getUser();
-    alert(
-      'Session exists: ' + (debugSession.session ? 'YES' : 'NO') +
-      '\nUser ID from session: ' + debugSession.session?.user?.id +
-      '\nUser ID from getUser(): ' + debugUser.user?.id +
-      '\nEmail confirmed: ' + debugUser.user?.email_confirmed_at +
-      '\nCityId: ' + form.cityId +
-      '\nAreaId: ' + form.areaId +
-      '\nCategoryId: ' + form.categoryId
-    );
-    // ===== END DEBUG BLOCK =====
-
     setSubmitting(true);
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData.session) throw new Error('Your session expired. Please log in again.');
       const userId = sessionData.session.user.id;
-
-      const { data: rpcCheck } = await supabase.rpc('debug_current_uid');
-alert('userId (from session): ' + userId + '\nauth.uid() seen by database: ' + rpcCheck);
 
       let profile_photo_url = null;
       if (form.profilePhotoFile) {
@@ -183,16 +166,10 @@ alert('userId (from session): ' + userId + '\nauth.uid() seen by database: ' + r
 
       setDone(true);
     } catch (err) {
-  alert(
-    'FULL ERROR DEBUG:\n' +
-    'Message: ' + err.message + '\n' +
-    'Code: ' + err.code + '\n' +
-    'Details: ' + err.details + '\n' +
-    'Hint: ' + err.hint
-  );
-} finally {
-  setSubmitting(false);
-}
+      alert('Registration failed: ' + err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (done) {
