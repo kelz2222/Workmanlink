@@ -16,7 +16,7 @@ export default function ArtisanProfile() {
   const [loading, setLoading] = useState(true);
   const [showReport, setShowReport] = useState(false);
   const [showHireModal, setShowHireModal] = useState(false);
-  const [activeJob, setActiveJob] = useState(null); // job for THIS artisan stored locally
+  const [activeJob, setActiveJob] = useState(null);
   const [checkingJob, setCheckingJob] = useState(true);
 
   useEffect(() => {
@@ -54,11 +54,11 @@ export default function ArtisanProfile() {
       customer_name: name,
       customer_phone: phone,
       status: 'hired',
+      payment_status: 'unpaid',
     }).select().single();
 
     if (error) { alert('Something went wrong, please try again'); return; }
 
-    // Save to localStorage so we can detect this job on return visits
     const jobs = JSON.parse(localStorage.getItem('wl_active_jobs') || '{}');
     jobs[data.id] = { artisanId: id };
     localStorage.setItem('wl_active_jobs', JSON.stringify(jobs));
@@ -67,16 +67,25 @@ export default function ArtisanProfile() {
 
     setActiveJob(data);
     setShowHireModal(false);
+  }
 
-    // Open WhatsApp chat with the artisan
-    const waMessage = encodeURIComponent(`Hi ${artisan.full_name}, I found you on WorkmanLink and I'd like to hire you for a job.`);
-    window.open(`https://wa.me/${artisan.whatsapp_number.replace(/\D/g, '')}?text=${waMessage}`, '_blank');
+  async function handleSimulatedPayment() {
+    // PLACEHOLDER: simulates a successful payment.
+    // When Paystack is connected, replace this with a real payment popup,
+    // and only update payment_status after Paystack confirms success via webhook.
+    await supabase.from('jobs').update({ payment_status: 'paid' }).eq('id', activeJob.id);
+    setActiveJob({ ...activeJob, payment_status: 'paid' });
+    alert('Payment successful (test mode). Your booking is confirmed.');
   }
 
   async function handleConfirmCompletion() {
-    await supabase.from('jobs').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', activeJob.id);
+    await supabase.from('jobs').update({
+      status: 'completed',
+      payment_status: 'released',
+      completed_at: new Date().toISOString(),
+    }).eq('id', activeJob.id);
     await supabase.from('artisans').update({ completed_jobs: (artisan.completed_jobs || 0) + 1 }).eq('id', id);
-    setActiveJob({ ...activeJob, status: 'completed' });
+    setActiveJob({ ...activeJob, status: 'completed', payment_status: 'released' });
     setArtisan({ ...artisan, completed_jobs: (artisan.completed_jobs || 0) + 1 });
   }
 
@@ -118,7 +127,6 @@ export default function ArtisanProfile() {
         </div>
       </div>
 
-      {/* Stats row */}
       <div className="px-4 -mt-4">
         <div className="card p-4 grid grid-cols-3 divide-x divide-gray-100 text-center">
           <div>
@@ -136,7 +144,6 @@ export default function ArtisanProfile() {
         </div>
       </div>
 
-      {/* Call / WhatsApp buttons */}
       <div className="px-4 mt-4 flex gap-2">
         <button onClick={handleCall} className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white py-3 rounded-xl font-medium">
           <Phone size={18} /> Call
@@ -146,7 +153,6 @@ export default function ArtisanProfile() {
         </button>
       </div>
 
-      {/* Hire / Job status section */}
       <div className="px-4 mt-4">
         {!activeJob && (
           <button onClick={() => setShowHireModal(true)} className="btn-primary w-full">
@@ -154,19 +160,26 @@ export default function ArtisanProfile() {
           </button>
         )}
 
-        {activeJob?.status === 'hired' && (
+        {activeJob?.status === 'hired' && activeJob?.payment_status === 'unpaid' && (
           <div className="card p-4 bg-yellow-50 border border-yellow-200">
-            <p className="text-sm text-yellow-800 font-medium">Job in progress</p>
-            <p className="text-xs text-yellow-700 mt-1">Waiting for {artisan.full_name.split(' ')[0]} to mark the job finished.</p>
+            <p className="text-sm text-yellow-800 font-medium mb-3">Confirm your booking</p>
+            <p className="text-xs text-yellow-700 mb-3">
+              Pay to secure this booking. Your payment is held safely and only released to {artisan.full_name.split(' ')[0]} once you confirm the job is done.
+            </p>
+            <button onClick={handleSimulatedPayment} className="w-full bg-yellow-600 text-white py-3 rounded-xl font-semibold">
+              Pay & Confirm Booking
+            </button>
           </div>
         )}
 
-        {activeJob?.status === 'awaiting_confirmation' && (
+        {activeJob?.status === 'hired' && activeJob?.payment_status === 'paid' && (
           <div className="card p-4 bg-blue-50 border-2 border-blue-300">
-            <p className="text-sm font-semibold text-blue-900 mb-2">{artisan.full_name.split(' ')[0]} says the job is done</p>
-            <p className="text-xs text-blue-700 mb-3">Please confirm only if the work was actually completed.</p>
+            <p className="text-sm font-semibold text-blue-900 mb-2">Payment secured</p>
+            <p className="text-xs text-blue-700 mb-3">
+              Once {artisan.full_name.split(' ')[0]} finishes the job to your satisfaction, confirm below to release payment.
+            </p>
             <button onClick={handleConfirmCompletion} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-semibold">
-              <CheckCircle2 size={18} /> Confirm Job Completed
+              <CheckCircle2 size={18} /> Job Finished — Release Payment
             </button>
           </div>
         )}
@@ -183,7 +196,6 @@ export default function ArtisanProfile() {
         )}
       </div>
 
-      {/* Bio */}
       {artisan.bio && (
         <div className="px-4 mt-5">
           <h3 className="font-semibold text-gray-900 mb-1">About</h3>
@@ -191,7 +203,6 @@ export default function ArtisanProfile() {
         </div>
       )}
 
-      {/* Portfolio */}
       {portfolio.length > 0 && (
         <div className="px-4 mt-5">
           <h3 className="font-semibold text-gray-900 mb-2">Portfolio</h3>
@@ -203,7 +214,6 @@ export default function ArtisanProfile() {
         </div>
       )}
 
-      {/* Reviews */}
       <div className="px-4 mt-5">
         <h3 className="font-semibold text-gray-900 mb-2">Reviews ({reviews.length})</h3>
         {reviews.length === 0 ? (
@@ -224,7 +234,6 @@ export default function ArtisanProfile() {
         )}
       </div>
 
-      {/* Report button */}
       <div className="px-4 mt-6">
         <button onClick={() => setShowReport(true)} className="flex items-center gap-2 text-red-500 text-sm font-medium mx-auto">
           <Flag size={15} /> Report this Artisan
@@ -252,7 +261,7 @@ function HireModal({ artisanName, onClose, onSubmit }) {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
       <div className="bg-white w-full rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-bold text-lg mb-1">Hire {artisanName.split(' ')[0]}</h3>
-        <p className="text-sm text-gray-500 mb-4">Enter your details so we can track this job for confirmation and reviews later.</p>
+        <p className="text-sm text-gray-500 mb-4">Enter your details so we can track this job for payment, confirmation and reviews later.</p>
 
         <input
           value={name}
@@ -272,7 +281,7 @@ function HireModal({ artisanName, onClose, onSubmit }) {
           onClick={() => name && phone && onSubmit(name, phone)}
           className="btn-primary w-full"
         >
-          Continue to WhatsApp
+          Continue
         </button>
       </div>
     </div>
