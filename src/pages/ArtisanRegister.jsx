@@ -10,7 +10,9 @@ export default function ArtisanRegister() {
   const [areas, setAreas] = useState([]);
   const [categories, setCategories] = useState([]);
   const [submitting, setSubmitting] = useState(false);
+  const [creatingAccount, setCreatingAccount] = useState(false);
   const [done, setDone] = useState(false);
+  const [accountCreated, setAccountCreated] = useState(false);
 
   const [form, setForm] = useState({
     email: '',
@@ -31,6 +33,12 @@ export default function ArtisanRegister() {
 
   useEffect(() => {
     loadOptions();
+    // If they're already logged in (came back after step 1 earlier), skip ahead
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        setAccountCreated(true);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -55,10 +63,41 @@ export default function ArtisanRegister() {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function nextStep() {
-    if (step === 1 && (!form.email || !form.password || form.password.length < 6)) {
+  // STEP 1: create the account FIRST, confirm session is active, THEN move on
+  async function handleCreateAccount() {
+    if (!form.email || !form.password || form.password.length < 6) {
       return alert('Please enter a valid email and a password with at least 6 characters');
     }
+
+    setCreatingAccount(true);
+    try {
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+      });
+      if (signUpError) throw signUpError;
+
+      // Force an explicit sign-in to guarantee an active session
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: form.email,
+        password: form.password,
+      });
+      if (signInError) throw signInError;
+
+      // Double-check the session is really there before proceeding
+      const { data: sessionCheck } = await supabase.auth.getSession();
+      if (!sessionCheck.session) throw new Error('Could not confirm login session. Please try again.');
+
+      setAccountCreated(true);
+      setStep(2);
+    } catch (err) {
+      alert('Account creation failed: ' + err.message);
+    } finally {
+      setCreatingAccount(false);
+    }
+  }
+
+  function nextStep() {
     if (step === 2 && (!form.fullName || !form.phone || !form.whatsapp || !form.categoryId)) {
       return alert('Please fill in all required fields');
     }
@@ -72,6 +111,7 @@ export default function ArtisanRegister() {
     setStep((s) => s - 1);
   }
 
+  // FINAL STEP: no signUp here anymore — the user is already logged in from step 1
   async function handleSubmit() {
     if (!form.ninNumber || !form.ninDocFile) {
       return alert('NIN number and NIN document are required for verification');
@@ -80,22 +120,11 @@ export default function ArtisanRegister() {
     setSubmitting(true);
 
     try {
-      // 1. Create auth account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-  email: form.email,
-  password: form.password,
-});
-if (authError) throw authError;
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) throw new Error('Your session expired. Please log in again.');
+      const userId = sessionData.session.user.id;
 
-const userId = authData.user.id;
-
-const { error: signInError } = await supabase.auth.signInWithPassword({
-  email: form.email,
-  password: form.password,
-});
-if (signInError) throw signInError;
-
-      // 2. Upload profile photo (public bucket)
+      // 1. Upload profile photo (public bucket)
       let profile_photo_url = null;
       if (form.profilePhotoFile) {
         const fileName = `${userId}-${Date.now()}-${form.profilePhotoFile.name}`;
@@ -106,15 +135,13 @@ if (signInError) throw signInError;
         }
       }
 
-      // 3. Upload NIN document (PRIVATE bucket)
-      let nin_document_url = null;
+      // 2. Upload NIN document (PRIVATE bucket) — store path only
       const ninFileName = `${userId}-${Date.now()}-nin-${form.ninDocFile.name}`;
       const { error: ninUpErr } = await supabase.storage.from('nin-documents').upload(ninFileName, form.ninDocFile);
       if (ninUpErr) throw ninUpErr;
-      // Store the path, NOT a public URL — admin will generate signed URLs to view it
-      nin_document_url = ninFileName;
+      const nin_document_url = ninFileName;
 
-      // 4. Insert artisan row
+      // 3. Insert artisan row
       const { data: artisanRow, error: artisanError } = await supabase.from('artisans').insert({
         auth_user_id: userId,
         full_name: form.fullName,
@@ -133,7 +160,7 @@ if (signInError) throw signInError;
 
       if (artisanError) throw artisanError;
 
-      // 5. Upload portfolio images (public bucket)
+      // 4. Upload portfolio images (public bucket)
       for (const file of form.portfolioFiles) {
         const fileName = `${artisanRow.id}-${Date.now()}-${file.name}`;
         const { error: upErr } = await supabase.storage.from('portfolio-images').upload(fileName, file);
@@ -172,19 +199,22 @@ if (signInError) throw signInError;
       <h1 className="font-bold text-xl text-gray-900 mb-1">Become an Artisan</h1>
       <p className="text-sm text-gray-500 mb-5">Step {step} of 4</p>
 
-      {/* Progress bar */}
       <div className="flex gap-1 mb-6">
         {[1, 2, 3, 4].map((s) => (
           <div key={s} className={`flex-1 h-1.5 rounded-full ${s <= step ? 'bg-primary-500' : 'bg-gray-200'}`} />
         ))}
       </div>
 
-      {/* STEP 1: Account */}
+      {/* STEP 1: Account — creates + logs in immediately */}
       {step === 1 && (
         <div className="flex flex-col gap-3">
           <p className="font-semibold text-gray-800">Create your account</p>
+          <p className="text-xs text-gray-500 -mt-1">You'll be logged in right away, then continue to your profile.</p>
           <input type="email" value={form.email} onChange={(e) => update('email', e.target.value)} placeholder="Email address" className="w-full p-3 rounded-xl border border-gray-200" />
           <input type="password" value={form.password} onChange={(e) => update('password', e.target.value)} placeholder="Password (min 6 characters)" className="w-full p-3 rounded-xl border border-gray-200" />
+          <button onClick={handleCreateAccount} disabled={creatingAccount} className="btn-primary w-full disabled:opacity-50 mt-2">
+            {creatingAccount ? 'Creating account...' : 'Create Account & Continue'}
+          </button>
         </div>
       )}
 
@@ -302,11 +332,12 @@ if (signInError) throw signInError;
             <ChevronLeft size={18} /> Back
           </button>
         )}
-        {step < 4 ? (
+        {step > 1 && step < 4 && (
           <button onClick={nextStep} className="flex-1 flex items-center justify-center gap-1 btn-primary">
             Next <ChevronRight size={18} />
           </button>
-        ) : (
+        )}
+        {step === 4 && (
           <button onClick={handleSubmit} disabled={submitting} className="flex-1 btn-primary disabled:opacity-50">
             {submitting ? 'Submitting...' : 'Submit Registration'}
           </button>
