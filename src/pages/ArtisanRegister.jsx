@@ -133,6 +133,9 @@ export default function ArtisanRegister() {
       if (!sessionData.session) throw new Error('Your session expired. Please log in again.');
       const userId = sessionData.session.user.id;
 
+      const { data: rpcCheck } = await supabase.rpc('debug_current_uid');
+alert('userId (from session): ' + userId + '\nauth.uid() seen by database: ' + rpcCheck);
+
       let profile_photo_url = null;
       if (form.profilePhotoFile) {
         const fileName = `${userId}-${Date.now()}-${form.profilePhotoFile.name}`;
