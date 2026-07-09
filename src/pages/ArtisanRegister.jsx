@@ -29,6 +29,7 @@ export default function ArtisanRegister() {
     portfolioFiles: [],
     ninNumber: '',
     ninDocFile: null,
+    selfieFile: null,
     bankName: '',
     bankAccountNumber: '',
     bankAccountName: '',
@@ -111,8 +112,8 @@ export default function ArtisanRegister() {
   }
 
   async function handleSubmit() {
-    if (!form.ninNumber || !form.ninDocFile) {
-      return alert('NIN number and NIN document are required for verification');
+    if (!form.ninNumber || !form.ninDocFile || !form.selfieFile) {
+      return alert('NIN number, NIN document, and a selfie are all required for verification');
     }
 
     setSubmitting(true);
@@ -137,6 +138,11 @@ export default function ArtisanRegister() {
       if (ninUpErr) throw ninUpErr;
       const nin_document_url = ninFileName;
 
+      const selfieFileName = `${userId}-${Date.now()}-selfie-${form.selfieFile.name}`;
+      const { error: selfieUpErr } = await supabase.storage.from('selfies').upload(selfieFileName, form.selfieFile);
+      if (selfieUpErr) throw selfieUpErr;
+      const selfie_url = selfieFileName;
+
       const { data: artisanRow, error: artisanError } = await supabase.from('artisans').insert({
         auth_user_id: userId,
         full_name: form.fullName,
@@ -150,6 +156,7 @@ export default function ArtisanRegister() {
         profile_photo_url,
         nin_number: form.ninNumber,
         nin_document_url,
+        selfie_url,
         bank_name: form.bankName,
         bank_account_number: form.bankAccountNumber,
         bank_account_name: form.bankAccountName,
@@ -297,7 +304,7 @@ export default function ArtisanRegister() {
               <p className="text-sm font-semibold text-gray-800">Identity Verification</p>
             </div>
             <p className="text-xs text-gray-500 mb-3">
-              Required for admin approval. Your NIN is private and visible only to WorkmanLink admins — never shown publicly.
+              Required for admin approval. Your NIN and selfie are private and visible only to WorkmanLink admins — never shown publicly.
             </p>
 
             <input
@@ -307,12 +314,23 @@ export default function ArtisanRegister() {
               className="w-full p-3 rounded-xl border border-gray-200 mb-3"
             />
 
-            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl py-6 cursor-pointer bg-white">
+            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl py-6 cursor-pointer bg-white mb-3">
               <Camera size={22} className="text-gray-400" />
               <span className="text-sm text-gray-500">
                 {form.ninDocFile ? form.ninDocFile.name : 'Upload NIN slip or card photo'}
               </span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => update('ninDocFile', e.target.files[0])} />
+            </label>
+
+            <p className="text-xs text-gray-500 mb-2">
+              Take a quick selfie so our admin can confirm it's really you.
+            </p>
+            <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-300 rounded-xl py-6 cursor-pointer bg-white">
+              <Camera size={22} className="text-gray-400" />
+              <span className="text-sm text-gray-500">
+                {form.selfieFile ? form.selfieFile.name : 'Take or upload a selfie'}
+              </span>
+              <input type="file" accept="image/*" capture="user" className="hidden" onChange={(e) => update('selfieFile', e.target.files[0])} />
             </label>
           </div>
 
