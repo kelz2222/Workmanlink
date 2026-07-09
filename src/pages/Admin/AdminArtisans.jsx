@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { ArrowLeft, BadgeCheck, Star, Eye, X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, Star, Eye, X, Trash2 } from 'lucide-react';
 
 export default function AdminArtisans() {
   const navigate = useNavigate();
@@ -9,7 +9,8 @@ export default function AdminArtisans() {
   const [artisans, setArtisans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState(searchParams.get('filter') || 'all');
-  const [viewingNin, setViewingNin] = useState(null); // { signedUrl, ninNumber, name }
+  const [viewingNin, setViewingNin] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => {
     loadArtisans();
@@ -17,7 +18,6 @@ export default function AdminArtisans() {
 
   async function loadArtisans() {
     setLoading(true);
-    // Admin can select ALL fields including nin — protected by admin_users RLS policy
     let query = supabase.from('artisans').select(`
       *, cities(name), areas(name), categories(name, icon)
     `).order('created_at', { ascending: false });
@@ -48,9 +48,61 @@ export default function AdminArtisans() {
 
   async function viewNinDocument(artisan) {
     if (!artisan.nin_document_url) return alert('No NIN document uploaded');
-    const { data, error } = await supabase.storage.from('nin-documents').createSignedUrl(artisan.nin_document_url, 60);
-    if (error) return alert('Could not load document: ' + error.message);
-    setViewingNin({ signedUrl: data.signedUrl, ninNumber: artisan.nin_number, name: artisan.full_name });
+
+    const { data: ninData, error: ninError } = await supabase.storage.from('nin-documents').createSignedUrl(artisan.nin_document_url, 60);
+    if (ninError) return alert('Could not load NIN document: ' + ninError.message);
+
+    let selfieSignedUrl = null;
+    if (artisan.selfie_url) {
+      const { data: selfieData } = await supabase.storage.from('selfies').createSignedUrl(artisan.selfie_url, 60);
+      selfieSignedUrl = selfieData?.signedUrl || null;
+    }
+
+    setViewingNin({
+      signedUrl: ninData.signedUrl,
+      selfieUrl: selfieSignedUrl,
+      ninNumber: artisan.nin_number,
+      name: artisan.full_name,
+    });
+  }
+
+  async function handleDeleteArtisan(artisan) {
+    if (artisan.nin_document_url) {
+      await supabase.storage.from('nin-documents').remove([artisan.nin_document_url]);
+    }
+
+    if (artisan.selfie_url) {
+      await supabase.storage.from('selfies').remove([artisan.selfie_url]);
+    }
+
+    const { data: images } = await supabase.from('portfolio_images').select('image_url').eq('artisan_id', artisan.id);
+    if (images && images.length > 0) {
+      const paths = images.map(img => {
+        const parts = img.image_url.split('/portfolio-images/');
+        return parts[1];
+      }).filter(Boolean);
+      if (paths.length > 0) {
+        await supabase.storage.from('portfolio-images').remove(paths);
+      }
+    }
+
+    if (artisan.profile_photo_url) {
+      const parts = artisan.profile_photo_url.split('/profile-photos/');
+      if (parts[1]) {
+        await supabase.storage.from('profile-photos').remove([parts[1]]);
+      }
+    }
+
+    const { error } = await supabase.from('artisans').delete().eq('id', artisan.id);
+
+    if (error) {
+      alert('Could not delete artisan: ' + error.message);
+    } else {
+      alert(`${artisan.full_name}'s profile and all associated files have been permanently deleted.`);
+    }
+
+    setConfirmDelete(null);
+    loadArtisans();
   }
 
   return (
@@ -98,11 +150,19 @@ export default function AdminArtisans() {
                 </div>
               </div>
 
+              {(a.bank_name || a.bank_account_number) && (
+                <div className="mt-3 bg-gray-50 rounded-xl p-3 text-xs text-gray-600">
+                  <p className="font-medium text-gray-700 mb-1">Bank Details</p>
+                  <p>{a.bank_name} — {a.bank_account_number}</p>
+                  <p>{a.bank_account_name}</p>
+                </div>
+              )}
+
               <button
                 onClick={() => viewNinDocument(a)}
                 className="w-full mt-3 flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-xl text-sm font-medium"
               >
-                <Eye size={15} /> View NIN Document
+                <Eye size={15} /> View NIN & Selfie
               </button>
 
               <div className="flex gap-2 mt-2">
@@ -134,22 +194,61 @@ export default function AdminArtisans() {
                   </button>
                 </div>
               )}
+
+              {a.status === 'rejected' && (
+                <button
+                  onClick={() => setConfirmDelete(a)}
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-red-50 text-red-600 py-2 rounded-xl text-sm font-medium border border-red-200"
+                >
+                  <Trash2 size={14} /> Delete Permanently
+                </button>
+              )}
             </div>
           ))}
         </div>
       )}
 
-      {/* NIN viewer modal */}
       {viewingNin && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setViewingNin(null)}>
-          <div className="bg-white rounded-2xl p-4 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-4 max-w-sm w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold text-gray-900">{viewingNin.name}'s NIN</p>
+              <p className="font-semibold text-gray-900">{viewingNin.name}'s Verification</p>
               <button onClick={() => setViewingNin(null)}><X size={20} /></button>
             </div>
             <p className="text-sm text-gray-600 mb-2">NIN Number: <span className="font-mono">{viewingNin.ninNumber}</span></p>
-            <img src={viewingNin.signedUrl} className="w-full rounded-xl" />
-            <p className="text-[11px] text-gray-400 mt-2">This link expires in 60 seconds for security.</p>
+
+            <p className="text-xs font-medium text-gray-500 mb-1">NIN Document</p>
+            <img src={viewingNin.signedUrl} className="w-full rounded-xl mb-4" />
+
+            {viewingNin.selfieUrl ? (
+              <>
+                <p className="text-xs font-medium text-gray-500 mb-1">Selfie — compare faces before verifying</p>
+                <img src={viewingNin.selfieUrl} className="w-full rounded-xl" />
+              </>
+            ) : (
+              <p className="text-xs text-gray-400 italic">No selfie uploaded (registered before this feature was added)</p>
+            )}
+
+            <p className="text-[11px] text-gray-400 mt-3">These links expire in 60 seconds for security.</p>
+          </div>
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="bg-white rounded-2xl p-5 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <p className="font-bold text-gray-900 mb-2">Delete {confirmDelete.full_name}?</p>
+            <p className="text-sm text-gray-600 mb-5">
+              This permanently removes their profile, NIN details, selfie, reviews, and job history from WorkmanLink. This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDelete(null)} className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-xl text-sm font-medium">
+                Cancel
+              </button>
+              <button onClick={() => handleDeleteArtisan(confirmDelete)} className="flex-1 bg-red-500 text-white py-2.5 rounded-xl text-sm font-medium">
+                Yes, Delete
+              </button>
+            </div>
           </div>
         </div>
       )}
