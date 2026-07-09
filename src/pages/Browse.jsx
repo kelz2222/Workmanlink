@@ -5,7 +5,7 @@ import ArtisanCard from '../components/ArtisanCard';
 import { SlidersHorizontal, X } from 'lucide-react';
 
 export default function Browse() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [artisans, setArtisans] = useState([]);
   const [cities, setCities] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -22,6 +22,19 @@ export default function Browse() {
     verifiedOnly: false,
     topRated: false,
   });
+
+  // Re-sync filters every time the URL's query params change —
+  // this fixes the bug where searching again from Home didn't
+  // update the city/category if Browse was already visited once.
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      q: searchParams.get('q') || '',
+      city: searchParams.get('city') || '',
+      category: searchParams.get('category') || '',
+      area: searchParams.get('area') || '',
+    }));
+  }, [searchParams]);
 
   useEffect(() => {
     loadFilters();
