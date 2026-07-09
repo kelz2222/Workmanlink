@@ -10,6 +10,7 @@ export default function Browse() {
   const [cities, setCities] = useState([]);
   const [categories, setCategories] = useState([]);
   const [areas, setAreas] = useState([]);
+  const [filtersLoaded, setFiltersLoaded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -27,8 +28,10 @@ export default function Browse() {
   }, []);
 
   useEffect(() => {
-    loadArtisans();
-  }, [filters.city, filters.category, filters.area, filters.verifiedOnly, filters.topRated]);
+    if (filtersLoaded) {
+      loadArtisans();
+    }
+  }, [filtersLoaded, filters.q, filters.city, filters.category, filters.area, filters.verifiedOnly, filters.topRated]);
 
   async function loadFilters() {
     const [citiesRes, categoriesRes] = await Promise.all([
@@ -37,6 +40,7 @@ export default function Browse() {
     ]);
     setCities(citiesRes.data || []);
     setCategories(categoriesRes.data || []);
+    setFiltersLoaded(true);
   }
 
   useEffect(() => {
@@ -47,8 +51,8 @@ export default function Browse() {
       const { data } = await supabase.from('areas').select('*').eq('city_id', city.id).order('name');
       setAreas(data || []);
     }
-    loadAreas();
-  }, [filters.city, cities]);
+    if (filtersLoaded) loadAreas();
+  }, [filters.city, cities, filtersLoaded]);
 
   async function loadArtisans() {
     setLoading(true);
@@ -56,12 +60,26 @@ export default function Browse() {
 
     if (filters.city) {
       const city = cities.find(c => c.slug === filters.city);
-      if (city) query = query.eq('city_id', city.id);
+      if (city) {
+        query = query.eq('city_id', city.id);
+      } else {
+        setArtisans([]);
+        setLoading(false);
+        return;
+      }
     }
+
     if (filters.category) {
       const cat = categories.find(c => c.slug === filters.category);
-      if (cat) query = query.eq('category_id', cat.id);
+      if (cat) {
+        query = query.eq('category_id', cat.id);
+      } else {
+        setArtisans([]);
+        setLoading(false);
+        return;
+      }
     }
+
     if (filters.area) {
       query = query.eq('area_id', filters.area);
     }
@@ -74,7 +92,15 @@ export default function Browse() {
       query = query.order('created_at', { ascending: false });
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Browse query error:', error);
+      setArtisans([]);
+      setLoading(false);
+      return;
+    }
+
     let results = data || [];
 
     if (filters.q.trim()) {
@@ -124,7 +150,6 @@ export default function Browse() {
         </button>
       </div>
 
-      {/* Quick filter chips */}
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
         <button
           onClick={() => updateFilter('verifiedOnly', !filters.verifiedOnly)}
@@ -149,7 +174,6 @@ export default function Browse() {
         )}
       </div>
 
-      {/* Results */}
       {loading ? (
         <p className="text-center text-gray-400 py-10">Loading artisans...</p>
       ) : artisans.length === 0 ? (
@@ -160,7 +184,6 @@ export default function Browse() {
         </div>
       )}
 
-      {/* Filter drawer */}
       {showFilters && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={() => setShowFilters(false)}>
           <div className="bg-white w-full rounded-t-3xl p-5 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
