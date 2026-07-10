@@ -4,7 +4,8 @@ import { supabase, PUBLIC_ARTISAN_FIELDS } from '../lib/supabase';
 import SearchBar from '../components/SearchBar';
 import CategoryGrid from '../components/CategoryGrid';
 import ArtisanCard from '../components/ArtisanCard';
-import { BadgeCheck, MessageCircle, ShieldCheck, UserPlus } from 'lucide-react';
+import { BadgeCheck, MessageCircle, ShieldCheck, UserPlus, Bell } from 'lucide-react';
+import { requestPushPermission } from '../lib/onesignal';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -141,6 +142,15 @@ export default function Home() {
             </p>
           )}
         </div>
+      </div>
+
+      <div className="px-4 mt-7">
+        <button
+          onClick={requestPushPermission}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 py-3 rounded-xl text-sm font-medium"
+        >
+          <Bell size={16} className="text-primary-500" /> Enable Notifications
+        </button>
       </div>
 
       <div className="px-4 mt-7">
