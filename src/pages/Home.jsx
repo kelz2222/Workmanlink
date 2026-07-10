@@ -73,12 +73,10 @@ export default function Home() {
 
   return (
     <div className="pb-24 min-h-screen">
-      {/* HERO */}
       <div className="bg-primary-500 px-4 pt-6 pb-8 rounded-b-[32px]">
         <h1 className="text-white text-xl font-bold mb-1">WorkmanLink</h1>
         <p className="text-primary-50 text-sm mb-4">Guiding you to exceptional local skill</p>
 
-        {/* City selector */}
         <div className="flex gap-2 mb-4">
           {cities.map((city) => (
             <button
@@ -105,13 +103,11 @@ export default function Home() {
         </button>
       </div>
 
-      {/* BROWSE BY CATEGORY */}
       <div className="px-4 mt-6">
         <h2 className="font-bold text-gray-900 mb-3">Browse by Category</h2>
-        <CategoryGrid categories={categories} />
+        <CategoryGrid categories={categories} selectedCitySlug={selectedCity?.slug} />
       </div>
 
-      {/* FEATURED ARTISANS */}
       {featured.length > 0 && (
         <div className="px-4 mt-7">
           <div className="flex items-center justify-between mb-3">
@@ -123,7 +119,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* ARTISANS NEAR YOU */}
       <div className="px-4 mt-7">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-gray-900">Artisans Near You</h2>
@@ -145,7 +140,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BECOME AN ARTISAN BANNER */}
       <div className="px-4 mt-7">
         <div
           onClick={() => navigate('/register')}
@@ -159,7 +153,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* TRUST SECTION */}
       <div className="px-4 mt-7">
         <h2 className="font-bold text-gray-900 mb-3">Why WorkmanLink</h2>
         <div className="grid grid-cols-1 gap-3">
