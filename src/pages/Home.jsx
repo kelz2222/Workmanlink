@@ -74,7 +74,10 @@ export default function Home() {
   return (
     <div className="pb-24 min-h-screen">
       <div className="bg-primary-500 px-4 pt-6 pb-8 rounded-b-[32px]">
-        <h1 className="text-white text-xl font-bold mb-1">WorkmanLink</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <img src="/logo.png" alt="WorkmanLink" className="w-9 h-9 rounded-lg" />
+          <h1 className="text-white text-xl font-bold">WorkmanLink</h1>
+        </div>
         <p className="text-primary-50 text-sm mb-4">Guiding you to exceptional local skill</p>
 
         <div className="flex gap-2 mb-4">
