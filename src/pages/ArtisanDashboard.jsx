@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CheckCircle2, Share2 } from 'lucide-react';
+import DisputeModal from '../components/DisputeModal';
+import { CheckCircle2, Share2, Flag } from 'lucide-react';
 
 export default function ArtisanDashboard() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function ArtisanDashboard() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(true);
+  const [disputeJob, setDisputeJob] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -107,9 +109,26 @@ export default function ArtisanDashboard() {
                   <Share2 size={16} /> Send Confirmation Link
                 </button>
               )}
+
+              {(job.status === 'awaiting_confirmation' || job.status === 'completed') && (
+                <button
+                  onClick={() => setDisputeJob(job)}
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 py-2 rounded-xl text-xs font-medium"
+                >
+                  <Flag size={13} /> Raise a Dispute
+                </button>
+              )}
             </div>
           ))}
         </div>
+      )}
+
+      {disputeJob && (
+        <DisputeModal
+          jobId={disputeJob.id}
+          artisanId={artisan.id}
+          onClose={() => setDisputeJob(null)}
+        />
       )}
     </div>
   );
