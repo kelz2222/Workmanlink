@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Users, Clock, Star, Flag, LogOut } from 'lucide-react';
+import { Users, Clock, Star, Flag, LogOut, AlertTriangle } from 'lucide-react';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -22,12 +22,13 @@ export default function AdminDashboard() {
 
     setAuthorized(true);
 
-    const [total, pending, approved, verified, reports] = await Promise.all([
+    const [total, pending, approved, verified, reports, disputes] = await Promise.all([
       supabase.from('artisans').select('id', { count: 'exact', head: true }),
       supabase.from('artisans').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('artisans').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
       supabase.from('artisans').select('id', { count: 'exact', head: true }).eq('is_verified', true),
       supabase.from('reports').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+      supabase.from('disputes').select('id', { count: 'exact', head: true }).eq('status', 'open'),
     ]);
 
     setStats({
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
       approved: approved.count || 0,
       verified: verified.count || 0,
       openReports: reports.count || 0,
+      openDisputes: disputes.count || 0,
     });
     setLoading(false);
   }
@@ -50,7 +52,8 @@ export default function AdminDashboard() {
   const links = [
     { label: 'Pending Approvals', icon: Clock, path: '/admin/artisans?filter=pending', count: stats.pending, color: 'text-yellow-600 bg-yellow-50' },
     { label: 'All Artisans', icon: Users, path: '/admin/artisans', count: stats.total, color: 'text-primary-600 bg-primary-50' },
-    { label: 'Reports', icon: Flag, path: '/admin/reports', count: stats.openReports, color: 'text-red-600 bg-red-50' },
+    { label: 'Customer Reports', icon: Flag, path: '/admin/reports', count: stats.openReports, color: 'text-red-600 bg-red-50' },
+    { label: 'Artisan Disputes', icon: AlertTriangle, path: '/admin/disputes', count: stats.openDisputes, color: 'text-blue-600 bg-blue-50' },
   ];
 
   return (
@@ -63,7 +66,6 @@ export default function AdminDashboard() {
         <button onClick={handleLogout} className="text-gray-400"><LogOut size={20} /></button>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="card p-4">
           <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
@@ -83,7 +85,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Nav links */}
       <div className="flex flex-col gap-2">
         {links.map((link) => (
           <button
