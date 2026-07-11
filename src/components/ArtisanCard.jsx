@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { BadgeCheck, MapPin } from 'lucide-react';
+import { BadgeCheck, MapPin, Zap } from 'lucide-react';
 import StarRating from './StarRating';
 
 export default function ArtisanCard({ artisan }) {
@@ -21,6 +21,11 @@ export default function ArtisanCard({ artisan }) {
           <h3 className="font-semibold text-gray-900 truncate">{artisan.full_name}</h3>
           {artisan.is_verified && (
             <BadgeCheck size={16} className="text-primary-500 flex-shrink-0" />
+          )}
+          {artisan.available_today && (
+            <span className="flex items-center gap-0.5 bg-orange-50 text-orange-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0">
+              <Zap size={10} /> Today
+            </span>
           )}
         </div>
         <p className="text-sm text-primary-600 font-medium">
