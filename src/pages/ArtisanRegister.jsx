@@ -193,7 +193,10 @@ export default function ArtisanRegister() {
         <p className="text-sm text-gray-500 mb-6">
           Your profile is pending admin review. You'll be able to appear on WorkmanLink once approved and verified.
         </p>
-        <button onClick={() => navigate('/')} className="btn-primary w-full max-w-xs">Back to Home</button>
+        <button onClick={() => navigate('/')} className="btn-primary w-full max-w-xs mb-3">Back to Home</button>
+        <button onClick={() => navigate('/pricing')} className="text-primary-600 text-sm font-medium">
+          See how to get featured and get more bookings →
+        </button>
       </div>
     );
   }
@@ -218,6 +221,11 @@ export default function ArtisanRegister() {
           <button onClick={handleCreateAccount} disabled={creatingAccount} className="btn-primary w-full disabled:opacity-50 mt-2">
             {creatingAccount ? 'Creating account...' : 'Create Account & Continue'}
           </button>
+          <p className="text-[11px] text-gray-400 text-center mt-1">
+            By continuing, you agree to our{' '}
+            <a href="/terms" target="_blank" className="underline">Terms</a> and{' '}
+            <a href="/privacy" target="_blank" className="underline">Privacy Policy</a>
+          </p>
         </div>
       )}
 
