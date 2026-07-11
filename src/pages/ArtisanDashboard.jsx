@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, Share2 } from 'lucide-react';
 
 export default function ArtisanDashboard() {
+  const navigate = useNavigate();
   const [session, setSession] = useState(null);
   const [artisan, setArtisan] = useState(null);
   const [jobs, setJobs] = useState([]);
@@ -54,8 +56,11 @@ export default function ArtisanDashboard() {
         <h1 className="font-bold text-xl text-center mb-1">Artisan Login</h1>
         <p className="text-sm text-gray-500 text-center mb-6">Manage your jobs on WorkmanLink</p>
         <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full p-3 rounded-xl border border-gray-200 mb-3" />
-        <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password" className="w-full p-3 rounded-xl border border-gray-200 mb-4" />
-        <button onClick={handleLogin} className="btn-primary w-full">Log In</button>
+        <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Password" className="w-full p-3 rounded-xl border border-gray-200 mb-3" />
+        <button onClick={handleLogin} className="btn-primary w-full mb-3">Log In</button>
+        <button onClick={() => navigate('/forgot-password')} className="text-primary-600 text-sm font-medium text-center">
+          Forgot Password?
+        </button>
       </div>
     );
   }
