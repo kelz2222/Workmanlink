@@ -39,6 +39,12 @@ export default function ArtisanDashboard() {
     loadArtisanAndJobs(data.session.user.id);
   }
 
+  async function toggleAvailability() {
+    const newValue = !artisan.available_today;
+    await supabase.from('artisans').update({ available_today: newValue }).eq('id', artisan.id);
+    setArtisan({ ...artisan, available_today: newValue });
+  }
+
   async function markFinished(jobId) {
     await supabase.from('jobs').update({ status: 'awaiting_confirmation' }).eq('id', jobId);
     setJobs(jobs.map(j => j.id === jobId ? { ...j, status: 'awaiting_confirmation' } : j));
@@ -72,10 +78,21 @@ export default function ArtisanDashboard() {
   return (
     <div className="pb-24 min-h-screen px-4 pt-6">
       <h1 className="font-bold text-lg text-gray-900 mb-1">Hi, {artisan.full_name.split(' ')[0]}</h1>
-      <p className="text-sm text-gray-500 mb-5">
+      <p className="text-sm text-gray-500 mb-4">
         {artisan.status === 'pending' && '⏳ Awaiting admin approval'}
         {artisan.status === 'approved' && `✅ ${artisan.is_verified ? 'Verified' : 'Approved'} — ${artisan.completed_jobs} jobs completed`}
       </p>
+
+      {artisan.status === 'approved' && (
+        <button
+          onClick={toggleAvailability}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold mb-5 ${
+            artisan.available_today ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'
+          }`}
+        >
+          ⚡ {artisan.available_today ? "You're marked Available Today" : 'Mark Available Today'}
+        </button>
+      )}
 
       <h2 className="font-semibold text-gray-900 mb-2">My Jobs</h2>
       {jobs.length === 0 ? (
