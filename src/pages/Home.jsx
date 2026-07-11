@@ -154,15 +154,28 @@ export default function Home() {
       </div>
 
       <div className="px-4 mt-7">
-        <div
-          onClick={() => navigate('/register')}
-          className="bg-gray-900 rounded-2xl p-5 flex items-center justify-between active:scale-[0.98] transition-transform cursor-pointer"
-        >
-          <div>
-            <p className="text-white font-bold">Are you an Artisan?</p>
-            <p className="text-gray-300 text-sm mt-0.5">Join WorkmanLink and get more customers</p>
+        <div className="bg-gray-900 rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-white font-bold">Are you an Artisan?</p>
+              <p className="text-gray-300 text-sm mt-0.5">Join WorkmanLink and get more customers</p>
+            </div>
+            <UserPlus className="text-primary-500 flex-shrink-0" size={28} />
           </div>
-          <UserPlus className="text-primary-500" size={28} />
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/register')}
+              className="flex-1 bg-primary-500 text-white py-2.5 rounded-xl text-sm font-medium active:scale-[0.98] transition-transform"
+            >
+              Register
+            </button>
+            <button
+              onClick={() => navigate('/my-jobs')}
+              className="flex-1 bg-white/10 text-white py-2.5 rounded-xl text-sm font-medium active:scale-[0.98] transition-transform"
+            >
+              Log In
+            </button>
+          </div>
         </div>
       </div>
 
