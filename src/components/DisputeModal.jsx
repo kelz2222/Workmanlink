@@ -34,7 +34,7 @@ export default function DisputeModal({ jobId, artisanId, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-end" onClick={onClose}>
       <div
         className="bg-white w-full rounded-t-3xl flex flex-col"
         style={{ maxHeight: '90dvh' }}
