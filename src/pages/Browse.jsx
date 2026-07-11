@@ -21,11 +21,9 @@ export default function Browse() {
     area: searchParams.get('area') || '',
     verifiedOnly: false,
     topRated: false,
+    availableToday: false,
   });
 
-  // Re-sync filters every time the URL's query params change —
-  // this fixes the bug where searching again from Home didn't
-  // update the city/category if Browse was already visited once.
   useEffect(() => {
     setFilters((prev) => ({
       ...prev,
@@ -44,7 +42,7 @@ export default function Browse() {
     if (filtersLoaded) {
       loadArtisans();
     }
-  }, [filtersLoaded, filters.q, filters.city, filters.category, filters.area, filters.verifiedOnly, filters.topRated]);
+  }, [filtersLoaded, filters.q, filters.city, filters.category, filters.area, filters.verifiedOnly, filters.topRated, filters.availableToday]);
 
   async function loadFilters() {
     const [citiesRes, categoriesRes] = await Promise.all([
@@ -99,6 +97,9 @@ export default function Browse() {
     if (filters.verifiedOnly) {
       query = query.eq('is_verified', true);
     }
+    if (filters.availableToday) {
+      query = query.eq('available_today', true);
+    }
     if (filters.topRated) {
       query = query.order('average_rating', { ascending: false });
     } else {
@@ -134,11 +135,11 @@ export default function Browse() {
   }
 
   function clearFilters() {
-    setFilters({ q: '', city: '', category: '', area: '', verifiedOnly: false, topRated: false });
+    setFilters({ q: '', city: '', category: '', area: '', verifiedOnly: false, topRated: false, availableToday: false });
   }
 
   const activeFilterCount = [filters.city, filters.category, filters.area].filter(Boolean).length
-    + (filters.verifiedOnly ? 1 : 0) + (filters.topRated ? 1 : 0);
+    + (filters.verifiedOnly ? 1 : 0) + (filters.topRated ? 1 : 0) + (filters.availableToday ? 1 : 0);
 
   return (
     <div className="pb-24 min-h-screen px-4 pt-5">
@@ -164,6 +165,14 @@ export default function Browse() {
       </div>
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <button
+          onClick={() => updateFilter('availableToday', !filters.availableToday)}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
+            filters.availableToday ? 'bg-orange-500 text-white' : 'bg-white border border-gray-200 text-gray-600'
+          }`}
+        >
+          ⚡ Available Today
+        </button>
         <button
           onClick={() => updateFilter('verifiedOnly', !filters.verifiedOnly)}
           className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${
