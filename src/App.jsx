@@ -15,6 +15,7 @@ import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminArtisans from './pages/Admin/AdminArtisans';
 import AdminReports from './pages/Admin/AdminReports';
+import AdminDisputes from './pages/Admin/AdminDisputes';
 
 export default function App() {
   const location = useLocation();
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/artisans" element={<AdminArtisans />} />
         <Route path="/admin/reports" element={<AdminReports />} />
+        <Route path="/admin/disputes" element={<AdminDisputes />} />
       </Routes>
       {!hideNavbar && <Navbar />}
     </div>
