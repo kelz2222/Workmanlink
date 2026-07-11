@@ -6,6 +6,9 @@ import ArtisanProfile from './pages/ArtisanProfile';
 import ArtisanRegister from './pages/ArtisanRegister';
 import ArtisanDashboard from './pages/ArtisanDashboard';
 import ConfirmJob from './pages/ConfirmJob';
+import ArtisanPricing from './pages/ArtisanPricing';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminArtisans from './pages/Admin/AdminArtisans';
@@ -24,6 +27,9 @@ export default function App() {
         <Route path="/register" element={<ArtisanRegister />} />
         <Route path="/my-jobs" element={<ArtisanDashboard />} />
         <Route path="/confirm/:jobId" element={<ConfirmJob />} />
+        <Route path="/pricing" element={<ArtisanPricing />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/artisans" element={<AdminArtisans />} />
