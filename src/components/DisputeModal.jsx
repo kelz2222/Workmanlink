@@ -36,7 +36,8 @@ export default function DisputeModal({ jobId, artisanId, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
       <div
-        className="bg-white w-full rounded-t-3xl max-h-[80vh] flex flex-col"
+        className="bg-white w-full rounded-t-3xl flex flex-col"
+        style={{ maxHeight: '90dvh' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-5 pb-3 flex-shrink-0">
@@ -52,7 +53,7 @@ export default function DisputeModal({ jobId, artisanId, onClose }) {
           </div>
         ) : (
           <>
-            <div className="overflow-y-auto px-5 flex-1">
+            <div className="overflow-y-auto px-5 flex-1 min-h-0">
               <p className="text-sm font-semibold text-gray-700 mb-2">Reason</p>
               <div className="flex flex-col gap-1.5 mb-3">
                 {REASONS.map((r) => (
