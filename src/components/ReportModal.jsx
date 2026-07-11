@@ -26,7 +26,7 @@ export default function ReportModal({ artisanId, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
-      <div className="bg-white w-full rounded-t-3xl p-5" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white w-full rounded-t-3xl p-5 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-lg text-gray-900">Report Artisan</h3>
           <button onClick={onClose}><X size={22} /></button>
@@ -41,12 +41,12 @@ export default function ReportModal({ artisanId, onClose }) {
         ) : (
           <>
             <p className="text-sm font-semibold text-gray-700 mb-2">Reason</p>
-            <div className="flex flex-col gap-2 mb-4">
+            <div className="flex flex-col gap-1.5 mb-3">
               {REASONS.map((r) => (
                 <button
                   key={r}
                   onClick={() => setReason(r)}
-                  className={`text-left px-4 py-3 rounded-xl text-sm ${reason === r ? 'bg-red-50 border-2 border-red-400 text-red-600' : 'bg-gray-50 text-gray-700'}`}
+                  className={`text-left px-3 py-2.5 rounded-xl text-sm ${reason === r ? 'bg-red-50 border-2 border-red-400 text-red-600' : 'bg-gray-50 text-gray-700'}`}
                 >
                   {r}
                 </button>
@@ -65,11 +65,11 @@ export default function ReportModal({ artisanId, onClose }) {
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder="Explain what happened..."
-              rows={3}
-              className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none mb-4"
+              rows={2}
+              className="w-full p-3 rounded-xl border border-gray-200 text-sm outline-none mb-3"
             />
 
-            <button onClick={handleSubmit} disabled={submitting} className="w-full bg-red-500 text-white font-semibold py-3 rounded-xl disabled:opacity-50">
+            <button onClick={handleSubmit} disabled={submitting} className="w-full bg-red-500 text-white font-semibold py-3 rounded-xl disabled:opacity-50 sticky bottom-0">
               {submitting ? 'Submitting...' : 'Submit Report'}
             </button>
           </>
