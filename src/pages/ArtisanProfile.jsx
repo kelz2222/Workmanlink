@@ -4,7 +4,7 @@ import { supabase, PUBLIC_ARTISAN_FIELDS } from '../lib/supabase';
 import StarRating from '../components/StarRating';
 import ReviewForm from '../components/ReviewForm';
 import ReportModal from '../components/ReportModal';
-import { BadgeCheck, Phone, MessageCircle, MapPin, Flag, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { BadgeCheck, Phone, MessageCircle, MapPin, Flag, CheckCircle2, ArrowLeft, Zap } from 'lucide-react';
 
 export default function ArtisanProfile() {
   const { id } = useParams();
@@ -115,9 +115,14 @@ export default function ArtisanProfile() {
             className="w-20 h-20 rounded-2xl object-cover border-2 border-white"
           />
           <div className="flex-1">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-wrap">
               <h1 className="text-white font-bold text-lg">{artisan.full_name}</h1>
               {artisan.is_verified && <BadgeCheck size={18} className="text-white" />}
+              {artisan.available_today && (
+                <span className="flex items-center gap-1 bg-orange-500 text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                  <Zap size={11} /> Available Today
+                </span>
+              )}
             </div>
             <p className="text-primary-50 text-sm">{artisan.categories?.icon} {artisan.categories?.name}</p>
             <div className="flex items-center gap-1 text-primary-50 text-xs mt-1">
