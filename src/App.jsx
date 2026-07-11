@@ -9,6 +9,8 @@ import ConfirmJob from './pages/ConfirmJob';
 import ArtisanPricing from './pages/ArtisanPricing';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminArtisans from './pages/Admin/AdminArtisans';
@@ -30,6 +32,8 @@ export default function App() {
         <Route path="/pricing" element={<ArtisanPricing />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
         <Route path="/admin/artisans" element={<AdminArtisans />} />
