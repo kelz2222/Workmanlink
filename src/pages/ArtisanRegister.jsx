@@ -226,6 +226,9 @@ export default function ArtisanRegister() {
             <a href="/terms" target="_blank" className="underline">Terms</a> and{' '}
             <a href="/privacy" target="_blank" className="underline">Privacy Policy</a>
           </p>
+          <button onClick={() => navigate('/my-jobs')} className="text-primary-600 text-sm font-medium text-center mt-2">
+            Already registered? Log in instead
+          </button>
         </div>
       )}
 
